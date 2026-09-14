@@ -2,137 +2,251 @@ const fs = require("fs");
 const path = require("path");
 
 const databasePath = path.resolve(
-  process.env.DATABASE_PATH || "./database/location-tracker.json"
+    process.env.DATABASE_PATH ||
+    "./database/location-tracker.json"
 );
 
 const databaseDir = path.dirname(databasePath);
 
+// Create database folder if it doesn't exist
 if (!fs.existsSync(databaseDir)) {
-  fs.mkdirSync(databaseDir, { recursive: true });
+    fs.mkdirSync(databaseDir, {
+        recursive: true
+    });
 }
 
-function loadDatabase() {
-  if (!fs.existsSync(databasePath)) {
-    const initialData = {
-      devices: [],
-      locations: []
+// Create initial database
+function createDatabase() {
+    return {
+        devices: [],
+        locations: []
     };
+}
+
+// Load database
+function loadDatabase() {
+
+    if (!fs.existsSync(databasePath)) {
+        const database = createDatabase();
+
+        fs.writeFileSync(
+            databasePath,
+            JSON.stringify(database, null, 2)
+        );
+
+        return database;
+    }
+
+    try {
+        return JSON.parse(
+            fs.readFileSync(
+                databasePath,
+                "utf8"
+            )
+        );
+    } catch (error) {
+
+        console.error(
+            "❌ Database read error:",
+            error.message
+        );
+
+        return createDatabase();
+    }
+}
+
+// Save database
+function saveDatabase(database) {
 
     fs.writeFileSync(
-      databasePath,
-      JSON.stringify(initialData, null, 2)
+        databasePath,
+        JSON.stringify(
+            database,
+            null,
+            2
+        )
     );
-
-    return initialData;
-  }
-
-  try {
-    return JSON.parse(
-      fs.readFileSync(databasePath, "utf8")
-    );
-  } catch {
-    return {
-      devices: [],
-      locations: []
-    };
-  }
 }
 
-function saveDatabase(data) {
-  fs.writeFileSync(
-    databasePath,
-    JSON.stringify(data, null, 2)
-  );
-}
-
+// Add authorized device
 function addDevice(device) {
-  const db = loadDatabase();
 
-  const exists = db.devices.find(
-    d => String(d.id) === String(device.id)
-  );
+    const database = loadDatabase();
 
-  if (!exists) {
-    db.devices.push({
-      id: String(device.id),
-      name: device.name || "Unknown Device",
-      authorized: Boolean(device.authorized),
-      createdAt: new Date().toISOString()
-    });
+    const id = String(device.id);
 
-    saveDatabase(db);
-  }
+    const existing =
+        database.devices.find(
+            item => String(item.id) === id
+        );
 
-  return exists || db.devices[db.devices.length - 1];
+    if (existing) {
+        return existing;
+    }
+
+    const newDevice = {
+        id,
+        name: device.name || "Unknown Device",
+        authorized: Boolean(
+            device.authorized
+        ),
+        createdAt:
+            new Date().toISOString()
+    };
+
+    database.devices.push(newDevice);
+
+    saveDatabase(database);
+
+    return newDevice;
 }
 
+// Get device
 function getDevice(deviceId) {
-  const db = loadDatabase();
 
-  return db.devices.find(
-    d => String(d.id) === String(deviceId)
-  ) || null;
+    const database = loadDatabase();
+
+    return database.devices.find(
+        device =>
+            String(device.id) ===
+            String(deviceId)
+    ) || null;
 }
 
+// Get all devices
+function getDevices() {
+
+    const database = loadDatabase();
+
+    return database.devices;
+}
+
+// Save GPS location
 function saveLocation(location) {
-  const db = loadDatabase();
 
-  db.locations.push({
-    ...location,
-    deviceId: String(location.deviceId),
-    timestamp: new Date().toISOString()
-  });
+    const database = loadDatabase();
 
-  saveDatabase(db);
+    const newLocation = {
+        deviceId:
+            String(location.deviceId),
+
+        latitude:
+            Number(location.latitude),
+
+        longitude:
+            Number(location.longitude),
+
+        country:
+            location.country || "Unknown",
+
+        region:
+            location.region || "Unknown",
+
+        city:
+            location.city || "Unknown",
+
+        timestamp:
+            new Date().toISOString()
+    };
+
+    database.locations.push(
+        newLocation
+    );
+
+    saveDatabase(database);
+
+    return newLocation;
 }
 
+// Get latest location
 function getLatestLocation(deviceId) {
-  const db = loadDatabase();
 
-  const deviceLocations = db.locations
-    .filter(
-      location =>
-        String(location.deviceId) === String(deviceId)
-    )
-    .sort(
-      (a, b) =>
-        new Date(b.timestamp) - new Date(a.timestamp)
-    );
+    const database = loadDatabase();
 
-  return deviceLocations[0] || null;
+    const locations =
+        database.locations
+            .filter(
+                location =>
+                    String(
+                        location.deviceId
+                    ) ===
+                    String(deviceId)
+            )
+            .sort(
+                (a, b) =>
+                    new Date(b.timestamp) -
+                    new Date(a.timestamp)
+            );
+
+    return locations[0] || null;
 }
 
+// Get location history
 function getLocationHistory(deviceId) {
-  const db = loadDatabase();
 
-  return db.locations
-    .filter(
-      location =>
-        String(location.deviceId) === String(deviceId)
-    )
-    .sort(
-      (a, b) =>
-        new Date(b.timestamp) - new Date(a.timestamp)
-    );
+    const database = loadDatabase();
+
+    return database.locations
+        .filter(
+            location =>
+                String(
+                    location.deviceId
+                ) ===
+                String(deviceId)
+        )
+        .sort(
+            (a, b) =>
+                new Date(b.timestamp) -
+                new Date(a.timestamp)
+        );
+}
+
+// Remove device
+function removeDevice(deviceId) {
+
+    const database = loadDatabase();
+
+    const id = String(deviceId);
+
+    const index =
+        database.devices.findIndex(
+            device =>
+                String(device.id) === id
+        );
+
+    if (index === -1) {
+        return null;
+    }
+
+    const removed =
+        database.devices.splice(
+            index,
+            1
+        )[0];
+
+    // Remove the device's saved
+    // location history as well.
+    database.locations =
+        database.locations.filter(
+            location =>
+                String(
+                    location.deviceId
+                ) !== id
+        );
+
+    saveDatabase(database);
+
+    return removed;
 }
 
 module.exports = {
-  loadDatabase,
-  saveDatabase,
-  addDevice,
-  getDevice,
-  saveLocation,
-  getLatestLocation,
-  getLocationHistory
+    loadDatabase,
+    saveDatabase,
+    addDevice,
+    getDevice,
+    getDevices,
+    saveLocation,
+    getLatestLocation,
+    getLocationHistory,
+    removeDevice
 };
-
-This uses a simple JSON database for now, so no SQLite driver is required. It will create:
-
-database/
-└── location-tracker.json
-
-Your ".env" can therefore use:
-
-DATABASE_PATH=./database/location-tracker.json
-
-Next, we should connect "server.js" to this database so GPS locations are saved permanently instead of staying only in memory.
