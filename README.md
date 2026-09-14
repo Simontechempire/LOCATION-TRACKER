@@ -1,17 +1,17 @@
 # LOCATION-TRACKER
 Here’s a larger font-keyboard style description for your bot:
 
-╭━━━━━━━━━━━━━━━━━━━━━━━╮
+╭━━━━━━━━━━━━━━━━━━━━╮
 📍 𝐋𝐎𝐂𝐀𝐓𝐈𝐎𝐍 𝐓𝐑𝐀𝐂𝐊𝐄𝐑 📡
-╰━━━━━━━━━━━━━━━━━━━━━━━╯
+╰━━━━━━━━━━━━━━━━━━━━╯
 
 🌍 𝐖𝐄𝐋𝐂𝐎𝐌𝐄 𝐓𝐎 𝐋𝐎𝐂𝐀𝐓𝐈𝐎𝐍 𝐓𝐑𝐀𝐂𝐊𝐄𝐑
 
 📍 𝐋𝐎𝐂𝐀𝐓𝐈𝐎𝐍 𝐓𝐑𝐀𝐂𝐊𝐄𝐑 is a modern location-sharing system built to help users manage and view the locations of their own or authorized devices. The system connects a device to a secure server and displays the latest location that the device has voluntarily shared.
 
-╭━━━━━━━━━━━━━━━━━━━━━━━━━━╮
+╭━━━━━━━━━━━━━━╮
 ⚡ 𝐅𝐄𝐀𝐓𝐔𝐑𝐄𝐒
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯
+╰━━━━━━━━━━━━━━╯
 
 📱 𝐃𝐄𝐕𝐈𝐂𝐄 𝐌𝐀𝐍𝐀𝐆𝐄𝐌𝐄𝐍𝐓
 Add, manage, identify, and monitor authorized devices from one simple interface.
@@ -31,9 +31,9 @@ Check whether an authorized device is currently connected, offline, or has recen
 🔐 𝐏𝐑𝐈𝐕𝐀𝐂𝐘 & 𝐒𝐄𝐂𝐔𝐑𝐈𝐓𝐘
 Location information is available only through authorized location sharing. The system does not secretly obtain GPS coordinates from a phone number.
 
-╭━━━━━━━━━━━━━━━━━━━━━━━━━╮
+╭━━━━━━━━━━━━━━━━╮
 🤖 𝐁𝐎𝐓 𝐂𝐎𝐌𝐌𝐀𝐍𝐃𝐒
-╰━━━━━━━━━━━━━━━━━━━━━━━━━╯
+╰━━━━━━━━━━━━━━━━╯
 
 📍 /track — View an authorized device's latest shared location.
 🗺️ /location — Display the latest location information.
@@ -42,9 +42,9 @@ Location information is available only through authorized location sharing. The 
 🔗 /share — Start location sharing.
 🛑 /stop — Stop location sharing.
 
-╭━━━━━━━━━━━━━━━━━━━━━━━━━━━╮
+╭━━━━━━━━━━━━━━━━━━━━━━╮
 🚀 𝐒𝐈𝐌𝐏𝐋𝐄 • 𝐅𝐀𝐒𝐓 • 𝐒𝐄𝐂𝐔𝐑𝐄
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
+╰━━━━━━━━━━━━━━━━━━━━━━╯
 
 📍 𝐋𝐎𝐂𝐀𝐓𝐈𝐎𝐍 𝐓𝐑𝐀𝐂𝐊𝐄𝐑 — 𝐊𝐍𝐎𝐖 𝐖𝐇𝐄𝐑𝐄 𝐘𝐎𝐔𝐑 𝐀𝐔𝐓𝐇𝐎𝐑𝐈𝐙𝐄𝐃 𝐃𝐄𝐕𝐈𝐂𝐄𝐒 𝐀𝐑𝐄, 𝐖𝐈𝐓𝐇 𝐏𝐑𝐈𝐕𝐀𝐂𝐘 𝐁𝐔𝐈𝐋𝐓 𝐈𝐍.
 >POWER BY SIMON TECH<
