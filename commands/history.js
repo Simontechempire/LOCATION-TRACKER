@@ -1,12 +1,41 @@
 const axios = require("axios");
 
-module.exports = async function history(bot, chatId, args) {
+module.exports = async function historyCommand(
+    bot,
+    msg,
+    args
+) {
+    const chatId = msg.chat.id;
+
+    // Owner only
+    if (
+        String(msg.from.id) !==
+        String(process.env.OWNER_ID)
+    ) {
+        return bot.sendMessage(
+            chatId,
+            `❌ 𝐀𝐂𝐂𝐄𝐒𝐒 𝐃𝐄𝐍𝐈𝐄𝐃
+
+👑 This command is owner-only.`
+        );
+    }
+
     const deviceId = args[0];
 
     if (!deviceId) {
         return bot.sendMessage(
             chatId,
-            "📜 Usage:\n/history <deviceId>"
+            `╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮
+       📜 𝐋𝐎𝐂𝐀𝐓𝐈𝐎𝐍 𝐇𝐈𝐒𝐓𝐎𝐑𝐘
+╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
+
+Usage:
+
+/history <deviceId>
+
+Example:
+
+/history 234`
         );
     }
 
@@ -15,16 +44,20 @@ module.exports = async function history(bot, chatId, args) {
             `${process.env.TRACKER_API}/api/location/${encodeURIComponent(deviceId)}/history`
         );
 
-        const locations = response.data.locations || [];
+        const locations =
+            response.data.locations || [];
 
         if (!locations.length) {
             return bot.sendMessage(
                 chatId,
-                `📜 No location history found for device ${deviceId}.`
+                `📭 No shared location history found.
+
+📱 Device: ${deviceId}`
             );
         }
 
-        const recent = locations.slice(0, 10);
+        const recentLocations =
+            locations.slice(0, 10);
 
         let text = `
 ╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮
@@ -36,31 +69,63 @@ module.exports = async function history(bot, chatId, args) {
 
 `;
 
-        recent.forEach((location, index) => {
-            text += `
-${index + 1}. 📍 ${location.city || "Unknown"}
-   🌍 ${location.country || "Unknown"}
-   📌 ${location.latitude}, ${location.longitude}
-   🕐 ${location.timestamp || "Unknown"}
+        recentLocations.forEach(
+            (location, index) => {
+
+                text += `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${index + 1}. 📍 LOCATION
+
+🌍 Country:
+${location.country || "Unknown"}
+
+📍 Region:
+${location.region || "Unknown"}
+
+🏙️ Area:
+${location.city || "Unknown"}
+
+📌 Coordinates:
+${location.latitude}, ${location.longitude}
+
+🕐 Time:
+${location.timestamp || "Unknown"}
 `;
-        });
+            }
+        );
 
         text += `
-╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮
-        🔐 𝐀𝐔𝐓𝐇𝐎𝐑𝐈𝐙𝐄𝐃 𝐃𝐀𝐓𝐀
-╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔐 Only locations explicitly
+shared by the authorized device
+are included.
 `;
 
-        return bot.sendMessage(chatId, text);
+        await bot.sendMessage(
+            chatId,
+            text
+        );
 
     } catch (error) {
+
+        console.error(
+            "History command error:",
+            error.message
+        );
+
         const message =
             error.response?.data?.message ||
-            "Unable to retrieve history.";
+            "Unable to retrieve location history.";
 
-        return bot.sendMessage(
+        await bot.sendMessage(
             chatId,
-            `❌ ${message}`
+            `❌ 𝐇𝐈𝐒𝐓𝐎𝐑𝐘 𝐔𝐍𝐀𝐕𝐀𝐈𝐋𝐀𝐁𝐋𝐄
+
+📱 Device: ${deviceId}
+
+${message}`
         );
     }
 };
