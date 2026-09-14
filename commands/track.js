@@ -1,65 +1,123 @@
 const axios = require("axios");
 
-module.exports = async function track(bot, chatId, args) {
+module.exports = async function trackCommand(
+    bot,
+    msg,
+    args
+) {
+    const chatId = msg.chat.id;
+
+    // Owner only
+    if (
+        String(msg.from.id) !==
+        String(process.env.OWNER_ID)
+    ) {
+        return bot.sendMessage(
+            chatId,
+            `❌ 𝐀𝐂𝐂𝐄𝐒𝐒 𝐃𝐄𝐍𝐈𝐄𝐃
+
+👑 This command is owner-only.`
+        );
+    }
+
     const deviceId = args[0];
 
     if (!deviceId) {
         return bot.sendMessage(
             chatId,
-            "📍 Usage:\n/track <deviceId>"
+            `╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮
+        📍 𝐓𝐑𝐀𝐂𝐊 𝐃𝐄𝐕𝐈𝐂𝐄
+╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
+
+Usage:
+
+/track <deviceId>
+
+Example:
+
+/track 234`
         );
     }
 
     try {
+
         const response = await axios.get(
             `${process.env.TRACKER_API}/api/location/${encodeURIComponent(deviceId)}`
         );
 
-        const data = response.data.location;
+        const location =
+            response.data.location;
+
+        if (!location) {
+            return bot.sendMessage(
+                chatId,
+                "📭 No shared location found."
+            );
+        }
 
         const mapUrl =
-            `https://www.google.com/maps?q=${data.latitude},${data.longitude}`;
+            `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
 
-        const message = `
+        const updated =
+            location.timestamp ||
+            location.updatedAt ||
+            "Unknown";
+
+        const text = `
 ╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮
-       📡 𝐋𝐎𝐂𝐀𝐓𝐈𝐎𝐍 𝐓𝐑𝐀𝐂𝐊𝐄𝐑
+       📡 𝐋𝐎𝐂𝐀𝐓𝐈𝐎𝐍 𝐑𝐄𝐒𝐔𝐋𝐓
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
 
 📱 𝐃𝐄𝐕𝐈𝐂𝐄
 │
-├── 🆔 ID: ${data.deviceId}
-├── 🟢 Status: ${data.online ? "Online" : "Offline"}
-└── 🔐 Sharing: Authorized
+├── 🆔 ID: ${location.deviceId}
+└── 🟢 Status: Shared GPS available
 
 🌍 𝐋𝐎𝐂𝐀𝐓𝐈𝐎𝐍
 │
-├── 🇳🇬 Country: ${data.country}
-├── 📍 Region: ${data.region}
-├── 🏙️ Area: ${data.city}
-├── 📌 Latitude: ${data.latitude}
-└── 📌 Longitude: ${data.longitude}
+├── 🌐 Country: ${location.country || "Unknown"}
+├── 📍 Region: ${location.region || "Unknown"}
+└── 🏙️ Area: ${location.city || "Unknown"}
+
+📌 𝐆𝐏𝐒
+│
+├── Latitude: ${location.latitude}
+└── Longitude: ${location.longitude}
 
 🕐 𝐋𝐀𝐒𝐓 𝐔𝐏𝐃𝐀𝐓𝐄
-└── ${data.timestamp || data.updatedAt || "Unknown"}
+└── ${updated}
 
 🗺️ 𝐌𝐀𝐏
 └── ${mapUrl}
 
 ╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮
-      🔒 𝐀𝐔𝐓𝐇𝐎𝐑𝐈𝐙𝐄𝐃 𝐃𝐄𝐕𝐈𝐂𝐄
+   🔐 𝐀𝐔𝐓𝐇𝐎𝐑𝐈𝐙𝐄𝐃 𝐒𝐇𝐀𝐑𝐈𝐍𝐆
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
 `;
 
-        return bot.sendMessage(chatId, message);
+        await bot.sendMessage(
+            chatId,
+            text
+        );
 
     } catch (error) {
+
+        console.error(
+            "Track command error:",
+            error.message
+        );
+
         const message =
             error.response?.data?.message ||
-            "Unable to retrieve location.";
+            "No shared location is available.";
 
-        return bot.sendMessage(
+        await bot.sendMessage(
             chatId,
-            `❌ 𝐋𝐎𝐂𝐀𝐓𝐈𝐎𝐍 𝐔𝐍𝐀𝐕𝐀𝐈𝐋𝐀𝐁𝐋𝐄\n\n📱 Device: ${deviceId}\n\n${message}`
+            `❌ 𝐓𝐑𝐀𝐂𝐊𝐈𝐍𝐆 𝐔𝐍𝐀𝐕𝐀𝐈𝐋𝐀𝐁𝐋𝐄
+
+📱 Device: ${deviceId}
+
+${message}`
         );
     }
 };
