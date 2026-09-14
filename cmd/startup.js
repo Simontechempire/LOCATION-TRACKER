@@ -1,27 +1,57 @@
-require('dotenv').config();
-const TelegramBot = require('node-telegram-bot-api');
-const express = require('express');
+require("dotenv").config();
 
-// Initialize bot
-const token = process.env.TELEGRAM_BOT_TOKEN;
-if (!token) {
-  throw new Error('TELEGRAM_BOT_TOKEN not found in environment variables');
-}
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 📍 LOCATION TRACKER
+// 🚀 SINGLE PROCESS STARTUP
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-const bot = new TelegramBot(token, { polling: true });
-
-// Initialize express app (if needed for webhook or API)
-const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Bot command handlers can go here
-bot.on('message', (msg) => {
-  console.log('Received message:', msg.text);
-  // Add your message handling logic
-});
+console.log(`
+╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮
+│                                        │
+│        📍 𝐋𝐎𝐂𝐀𝐓𝐈𝐎𝐍 𝐓𝐑𝐀𝐂𝐊𝐄𝐑          │
+│                                        │
+│          🚀 𝐒𝐘𝐒𝐓𝐄𝐌 𝐒𝐓𝐀𝐑𝐓𝐈𝐍𝐆          │
+│                                        │
+╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
+`);
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log('Bot polling active...');
-});
+console.log("⚙️ Initializing services...");
+console.log(`📡 Port: ${PORT}`);
+console.log("🤖 Telegram: WEBHOOK MODE");
+console.log("🔐 GPS: CONSENT REQUIRED");
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 🚀 START SERVER
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+try {
+
+    require("../server.js");
+
+} catch (error) {
+
+    console.error(
+        "❌ Startup failed:",
+        error
+    );
+
+    process.exit(1);
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 🟢 STARTUP COMPLETE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+console.log(`
+╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮
+│                                        │
+│       🟢 𝐒𝐘𝐒𝐓𝐄𝐌 𝐒𝐓𝐀𝐑𝐓𝐄𝐃              │
+│                                        │
+│       📡 Server: ONLINE                │
+│       🤖 Telegram: WEBHOOK             │
+│       🔐 GPS: CONSENT BASED            │
+│                                        │
+╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
+`);
