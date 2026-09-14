@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Location Tracker</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: #080b12;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 520px;
+      background: #111722;
+      border: 1px solid #263244;
+      border-radius: 22px;
+      padding: 28px;
+      box-shadow: 0 15px 50px rgba(0, 0, 0, .45);
+    }
+
+    .logo {
+      text-align: center;
+      font-size: 55px;
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      text-align: center;
+      margin: 0;
+      font-size: 28px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #9ca8ba;
+      margin: 10px 0 25px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #b9c4d4;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      padding: 15px;
+      border-radius: 12px;
+      border: 1px solid #344154;
+      background: #080d15;
+      color: white;
+      outline: none;
+      font-size: 16px;
+      margin-bottom: 15px;
+    }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      border: 0;
+      border-radius: 12px;
+      background: #19c37d;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button.stop {
+      background: #d64545;
+      margin-top: 10px;
+    }
+
+    button:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .status {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 12px;
+      background: #080d15;
+      color: #b9c4d4;
+      line-height: 1.7;
+      white-space: pre-line;
+    }
+
+    .location {
+      margin-top: 15px;
+      padding: 16px;
+      border-radius: 12px;
+      background: #0c211a;
+      border: 1px solid #194f39;
+      display: none;
+    }
+
+    .location a {
+      color: #55dca5;
+    }
+
+    .notice {
+      margin-top: 18px;
+      color: #8895a8;
+      font-size: 13px;
+      line-height: 1.5;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="card">
+
+    <div class="logo">📍</div>
+
+    <h1>Location Tracker</h1>
+
+    <div class="subtitle">
+      Authorized GPS Location Sharing
+    </div>
+
+    <label for="deviceId">Device ID</label>
+
+    <input
+      id="deviceId"
+      type="text"
+      placeholder="Example: 234"
+      autocomplete="off"
+    >
+
+    <button id="startBtn" onclick="startSharing()">
+      📡 Start Location Sharing
+    </button>
+
+    <button
+      id="stopBtn"
+      class="stop"
+      onclick="stopSharing()"
+      style="display:none;"
+    >
+      🛑 Stop Sharing
+    </button>
+
+    <div id="status" class="status">
+      🔴 Location sharing is currently stopped.
+    </div>
+
+    <div id="location" class="location"></div>
+
+    <div class="notice">
+      🔐 Your browser will ask for GPS permission.
+      Your location is sent only after you choose to share it.
+    </div>
+
+  </div>
+
+<script>
+
+let watchId = null;
+
+const API_URL = window.location.origin;
+
+function startSharing() {
+
+  const deviceId =
+    document.getElementById("deviceId").value.trim();
+
+  if (!deviceId) {
+    setStatus("❌ Please enter your Device ID.");
+    return;
+  }
+
+  if (!navigator.geolocation) {
+    setStatus(
+      "❌ GPS is not supported by this browser."
+    );
+    return;
+  }
+
+  setStatus(
+    "🔎 Requesting GPS location...\n" +
+    "📡 Please allow location access when your browser asks."
+  );
+
+  watchId = navigator.geolocation.watchPosition(
+    position => sendLocation(deviceId, position),
+    error => {
+
+      let message = "❌ Unable to get GPS location.";
+
+      if (error.code === 1) {
+        message =
+          "❌ Location permission was denied.";
+      }
+
+      if (error.code === 2) {
+        message =
+          "❌ GPS location is unavailable.";
+      }
+
+      if (error.code === 3) {
+        message =
+          "❌ GPS request timed out.";
+      }
+
+      setStatus(message);
+    },
+    {
+      enableHighAccuracy: true,
+      maximumAge: 5000,
+      timeout: 15000
+    }
+  );
+
+  document.getElementById("startBtn").style.display = "none";
+  document.getElementById("stopBtn").style.display = "block";
+}
+
+async function sendLocation(deviceId, position) {
+
+  const latitude = position.coords.latitude;
+  const longitude = position.coords.longitude;
+
+  setStatus(
+    "🟢 GPS location detected.\n" +
+    "📡 Sending location to server..."
+  );
+
+  try {
+
+    const response = await fetch(
+      `${API_URL}/api/location`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+          deviceId,
+          latitude,
+          longitude,
+          country: "Nigeria",
+          region: "Unknown",
+          city: "Unknown"
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || "Server error"
+      );
+    }
+
+    showLocation(
+      latitude,
+      longitude
+    );
+
+    setStatus(
+      "🟢 Location sharing is active.\n" +
+      "📡 GPS update sent successfully."
+    );
+
+  } catch (error) {
+
+    setStatus(
+      "❌ Failed to send location.\n" +
+      error.message
+    );
+  }
+}
+
+function showLocation(latitude, longitude) {
+
+  const mapUrl =
+    `https://www.google.com/maps?q=${latitude},${longitude}`;
+
+  const box =
+    document.getElementById("location");
+
+  box.style.display = "block";
+
+  box.innerHTML = `
+    📍 <strong>Latest GPS Location</strong><br><br>
+
+    Latitude: ${latitude}<br>
+    Longitude: ${longitude}<br><br>
+
+    🗺️
+    <a
+      href="${mapUrl}"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      View on Google Maps
+    </a>
+  `;
+}
+
+function stopSharing() {
+
+  if (watchId !== null) {
+    navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+  }
+
+  document.getElementById("startBtn").style.display = "block";
+  document.getElementById("stopBtn").style.display = "none";
+
+  setStatus(
+    "🔴 Location sharing has been stopped."
+  );
+}
+
+function setStatus(message) {
+  document.getElementById("status").textContent = message;
+}
+
+</script>
+
+</body>
+    </html>
