@@ -1,0 +1,19 @@
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 📍 LOCATION TRACKER
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Telegram Bot
+BOT_TOKEN=YOUR_TELEGRAM_BOT_TOKEN
+OWNER_ID=YOUR_TELEGRAM_USER_ID
+
+# Server
+PORT=3000
+
+# Tracker API
+TRACKER_API=http://localhost:3000
+
+# Database
+DATABASE_PATH=./database/location-tracker.db
+
+# Environment
+NODE_ENV=development
