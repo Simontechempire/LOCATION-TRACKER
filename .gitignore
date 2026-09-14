@@ -1,3 +1,19 @@
-.env
+# Dependencies
 node_modules/
+
+# Environment secrets
+.env
+.env.*
+
+# Database
+database/*.json
 database/*.db
+database/*.sqlite
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
