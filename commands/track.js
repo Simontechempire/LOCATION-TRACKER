@@ -1,13 +1,14 @@
 const axios = require("axios");
 
-module.exports = async function track(sock, chatId, args) {
-    if (!args[0]) {
-        return sock.sendMessage(chatId, {
-            text: "📍 Usage: /track <deviceId>"
-        });
-    }
-
+module.exports = async function track(bot, chatId, args) {
     const deviceId = args[0];
+
+    if (!deviceId) {
+        return bot.sendMessage(
+            chatId,
+            "📍 Usage:\n/track <deviceId>"
+        );
+    }
 
     try {
         const response = await axios.get(
@@ -39,7 +40,7 @@ module.exports = async function track(sock, chatId, args) {
 └── 📌 Longitude: ${data.longitude}
 
 🕐 𝐋𝐀𝐒𝐓 𝐔𝐏𝐃𝐀𝐓𝐄
-└── ${data.updatedAt}
+└── ${data.timestamp || data.updatedAt || "Unknown"}
 
 🗺️ 𝐌𝐀𝐏
 └── ${mapUrl}
@@ -49,17 +50,16 @@ module.exports = async function track(sock, chatId, args) {
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
 `;
 
-        await sock.sendMessage(chatId, { text: message });
+        return bot.sendMessage(chatId, message);
 
     } catch (error) {
-        await sock.sendMessage(chatId, {
-            text:
-`❌ 𝐋𝐎𝐂𝐀𝐓𝐈𝐎𝐍 𝐀𝐕𝐀𝐈𝐋𝐀𝐁𝐋𝐄
+        const message =
+            error.response?.data?.message ||
+            "Unable to retrieve location.";
 
-📱 Device: ${deviceId}
-
-🔐 authorized GPS location
-was found for this device.`
-        });
+        return bot.sendMessage(
+            chatId,
+            `❌ 𝐋𝐎𝐂𝐀𝐓𝐈𝐎𝐍 𝐔𝐍𝐀𝐕𝐀𝐈𝐋𝐀𝐁𝐋𝐄\n\n📱 Device: ${deviceId}\n\n${message}`
+        );
     }
 };
