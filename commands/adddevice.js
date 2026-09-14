@@ -1,8 +1,29 @@
-const { addDevice, getDevice } = require("../database/database");
+const {
+    addDevice,
+    getDevice
+} = require("../database/database");
 
-module.exports = async function addDeviceCommand(bot, chatId, args) {
+module.exports = async function addDeviceCommand(
+    bot,
+    msg,
+    args
+) {
+    const chatId = msg.chat.id;
+
+    // Owner check
+    if (String(msg.from.id) !== String(process.env.OWNER_ID)) {
+        return bot.sendMessage(
+            chatId,
+            `❌ 𝐀𝐂𝐂𝐄𝐒𝐒 𝐃𝐄𝐍𝐈𝐄𝐃
+
+👑 This command is owner-only.`
+        );
+    }
+
     const deviceId = args[0];
-    const deviceName = args.slice(1).join(" ") || "Unknown Device";
+    const deviceName =
+        args.slice(1).join(" ") ||
+        "Unknown Device";
 
     if (!deviceId) {
         return bot.sendMessage(
@@ -27,13 +48,14 @@ Example:
         if (existing) {
             return bot.sendMessage(
                 chatId,
-                `⚠️ 𝐃𝐄𝐕𝐈𝐂𝐄 𝐀𝐋𝐑𝐄𝐀𝐃𝐘 𝐑𝐄𝐆𝐈𝐒𝐓𝐄𝐑𝐄𝐃
+                `⚠️ 𝐃𝐄𝐕𝐈𝐂𝐄 𝐀𝐋𝐑𝐄𝐀𝐃𝐘 𝐄𝐗𝐈𝐒𝐓𝐒
 
-📱 ID: ${deviceId}
-🔐 Authorization: ${
+📱 Name: ${existing.name}
+🆔 ID: ${existing.id}
+🔐 Sharing: ${
                     existing.authorized
-                        ? "Active"
-                        : "Inactive"
+                        ? "Authorized"
+                        : "Not authorized"
                 }`
             );
         }
@@ -41,34 +63,41 @@ Example:
         const device = addDevice({
             id: deviceId,
             name: deviceName,
+
+            // Registration does not secretly
+            // obtain GPS. The device owner
+            // must still explicitly share GPS.
             authorized: true
         });
 
         return bot.sendMessage(
             chatId,
             `╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮
-       ✅ 𝐃𝐄𝐕𝐈𝐂𝐄 𝐀𝐃𝐃𝐄𝐃
+        ✅ 𝐃𝐄𝐕𝐈𝐂𝐄 𝐀𝐃𝐃𝐄𝐃
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
 
 📱 Name: ${device.name}
 🆔 ID: ${device.id}
-🔐 Sharing: Authorized
-🟢 Status: Registered
+🔐 Registered: Yes
+📡 GPS: Waiting for device owner
 
-📡 The device can now share its
-GPS location after the device
-owner grants location permission.
+The device must explicitly enable
+location sharing before GPS data
+can be received.
 
-Use:
+📍 Track:
 /track ${device.id}`
         );
 
     } catch (error) {
-        console.error("Add device error:", error);
+        console.error(
+            "Add device error:",
+            error
+        );
 
         return bot.sendMessage(
             chatId,
-            "❌ Failed to register the device."
+            "❌ Failed to register device."
         );
     }
 };
