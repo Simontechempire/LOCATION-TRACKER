@@ -2,7 +2,6 @@ require("dotenv").config();
 
 const TelegramBot = require("node-telegram-bot-api");
 
-// Commands
 const startCommand = require("./commands/start");
 const addDeviceCommand = require("./commands/adddevice");
 const devicesCommand = require("./commands/devices");
@@ -12,27 +11,17 @@ const removeDeviceCommand = require("./commands/removedevice");
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const OWNER_ID = String(process.env.OWNER_ID || "");
-const WEBHOOK_URL = process.env.WEBHOOK_URL;
 
 if (!BOT_TOKEN) {
-    console.error("❌ BOT_TOKEN is missing.");
-    process.exit(1);
+    throw new Error("BOT_TOKEN not found in environment variables");
 }
 
 if (!OWNER_ID) {
-    console.error("❌ OWNER_ID is missing.");
-    process.exit(1);
+    throw new Error("OWNER_ID not found in environment variables");
 }
 
-if (!WEBHOOK_URL) {
-    console.error("❌ WEBHOOK_URL is missing.");
-    process.exit(1);
-}
-
-// Telegram bot WITHOUT polling
 const bot = new TelegramBot(BOT_TOKEN);
 
-// Owner check
 function isOwner(msg) {
     return (
         msg &&
@@ -49,7 +38,11 @@ bot.onText(/^\/start$/i, async (msg) => {
     try {
         await startCommand(bot, msg);
     } catch (error) {
-        console.error("❌ /start error:", error);
+        console.error("❌ /start:", error);
+        await bot.sendMessage(
+            msg.chat.id,
+            "❌ Unable to start the bot."
+        );
     }
 });
 
@@ -58,17 +51,16 @@ bot.onText(/^\/start$/i, async (msg) => {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 bot.onText(/^\/owner$/i, async (msg) => {
-    try {
-        if (!isOwner(msg)) {
-            return bot.sendMessage(
-                msg.chat.id,
-                `❌ 𝐀𝐂𝐂𝐄𝐒𝐒 𝐃𝐄𝐍𝐈𝐄𝐃
+    if (!isOwner(msg)) {
+        return bot.sendMessage(
+            msg.chat.id,
+            `❌ 𝐀𝐂𝐂𝐄𝐒𝐒 𝐃𝐄𝐍𝐈𝐄𝐃
 
 👑 Owner only.`
-            );
-        }
+        );
+    }
 
-        const text = `
+    const text = `
 ╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮
           👑 𝐎𝐖𝐍𝐄𝐑 𝐌𝐄𝐍𝐔
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
@@ -84,15 +76,10 @@ bot.onText(/^\/owner$/i, async (msg) => {
 ├── /track <id>
 └── /history <id>
 
-🔐 Authorized location sharing
-only.
+🔐 Authorized location sharing only.
 `;
 
-        await bot.sendMessage(msg.chat.id, text);
-
-    } catch (error) {
-        console.error("❌ /owner error:", error);
-    }
+    await bot.sendMessage(msg.chat.id, text);
 });
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -108,9 +95,8 @@ bot.onText(
                 : [];
 
             await addDeviceCommand(bot, msg, args);
-
         } catch (error) {
-            console.error("❌ /adddevice error:", error);
+            console.error("❌ /adddevice:", error);
         }
     }
 );
@@ -123,7 +109,7 @@ bot.onText(/^\/devices$/i, async (msg) => {
     try {
         await devicesCommand(bot, msg);
     } catch (error) {
-        console.error("❌ /devices error:", error);
+        console.error("❌ /devices:", error);
     }
 });
 
@@ -140,9 +126,8 @@ bot.onText(
                 : [];
 
             await trackCommand(bot, msg, args);
-
         } catch (error) {
-            console.error("❌ /track error:", error);
+            console.error("❌ /track:", error);
         }
     }
 );
@@ -160,9 +145,8 @@ bot.onText(
                 : [];
 
             await historyCommand(bot, msg, args);
-
         } catch (error) {
-            console.error("❌ /history error:", error);
+            console.error("❌ /history:", error);
         }
     }
 );
@@ -180,41 +164,53 @@ bot.onText(
                 : [];
 
             await removeDeviceCommand(bot, msg, args);
-
         } catch (error) {
-            console.error("❌ /removedevice error:", error);
+            console.error("❌ /removedevice:", error);
         }
     }
 );
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 🌐 WEBHOOK
+// 📨 UPDATE PROCESSOR
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-const webhookPath = `/telegram/${BOT_TOKEN}`;
+function processUpdate(update) {
+    bot.processUpdate(update);
+}
 
-async function setupWebhook() {
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 🟢 TELEGRAM TEST
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+async function initializeTelegram() {
     try {
-        await bot.deleteWebHook();
+        // Remove any old polling/webhook configuration.
+        await bot.stopPolling().catch(() => {});
+        await bot.deleteWebHook().catch(() => {});
 
-        await bot.setWebHook(
-            `${WEBHOOK_URL}${webhookPath}`
-        );
+        const me = await bot.getMe();
 
-        const info = await bot.getWebHookInfo();
+        console.log(`
+╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮
+        🟢 𝐓𝐄𝐋𝐄𝐆𝐑𝐀𝐌 𝐎𝐍𝐋𝐈𝐍𝐄
+╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
 
-        console.log("🟢 Telegram webhook active");
-        console.log(`🌐 URL: ${info.url}`);
-        console.log(`📡 Pending updates: ${info.pending_update_count}`);
-
+🤖 Bot      : ${me.first_name}
+👤 Username : @${me.username}
+🆔 Bot ID   : ${me.id}
+📡 Mode     : WEBHOOK
+`);
     } catch (error) {
         console.error(
-            "❌ Webhook setup failed:",
+            "❌ Telegram initialization failed:",
             error.message
         );
     }
 }
 
-setupWebhook();
+initializeTelegram();
 
-console.log("🤖 Location Tracker Telegram bot started.");
+module.exports = {
+    bot,
+    processUpdate
+};
