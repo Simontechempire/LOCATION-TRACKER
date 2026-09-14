@@ -1,21 +1,38 @@
-const { loadDatabase } = require("../database/database");
+const {
+    getDevices
+} = require("../database/database");
 
-module.exports = async function devices(bot, chatId) {
+module.exports = async function devicesCommand(
+    bot,
+    msg
+) {
+    const chatId = msg.chat.id;
+
+    // Owner only
+    if (String(msg.from.id) !== String(process.env.OWNER_ID)) {
+        return bot.sendMessage(
+            chatId,
+            `❌ 𝐀𝐂𝐂𝐄𝐒𝐒 𝐃𝐄𝐍𝐈𝐄𝐃
+
+👑 This command is owner-only.`
+        );
+    }
+
     try {
-        const db = loadDatabase();
-        const devices = db.devices || [];
+        const devices = getDevices();
 
-        if (devices.length === 0) {
+        if (!devices.length) {
             return bot.sendMessage(
                 chatId,
                 `╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮
-       📱 𝐀𝐔𝐓𝐇𝐎𝐑𝐈𝐙𝐄𝐃 𝐃𝐄𝐕𝐈𝐂𝐄𝐒
+       📱 𝐃𝐄𝐕𝐈𝐂𝐄𝐒
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
 
-📭 No authorized devices registered.
+📭 No devices registered.
 
-Use:
-/adddevice <deviceId>`
+Add one with:
+
+/adddevice <deviceId> <name>`
             );
         }
 
@@ -26,30 +43,45 @@ Use:
 `;
 
         devices.forEach((device, index) => {
+
+            const status =
+                device.authorized
+                    ? "🔐 Authorized"
+                    : "🔴 Revoked";
+
             text += `
-${index + 1}. 📱 ${device.name || "Unknown Device"}
-   🆔 ID: ${device.id}
-   🔐 Sharing: ${
-       device.authorized ? "Authorized" : "Not authorized"
-   }
-   🕐 Added: ${device.createdAt || "Unknown"}
+${index + 1}. 📱 ${device.name}
+│
+├── 🆔 ID: ${device.id}
+├── ${status}
+└── 🕐 Added: ${
+                device.createdAt || "Unknown"
+            }
+
 `;
         });
 
         text += `
 ╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮
-       📊 Total: ${devices.length}
+       📊 TOTAL: ${devices.length}
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
 `;
 
-        return bot.sendMessage(chatId, text);
+        await bot.sendMessage(
+            chatId,
+            text
+        );
 
     } catch (error) {
-        console.error("Devices error:", error);
 
-        return bot.sendMessage(
+        console.error(
+            "Devices command error:",
+            error
+        );
+
+        await bot.sendMessage(
             chatId,
-            "❌ Unable to load registered devices."
+            "❌ Failed to load devices."
         );
     }
 };
