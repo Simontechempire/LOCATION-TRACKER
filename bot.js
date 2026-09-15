@@ -6,12 +6,12 @@ const TelegramBot = require("node-telegram-bot-api");
 // 📂 COMMANDS
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-const startCommand = require("./command/start");
-const addDeviceCommand = require("./command/adddevice");
-const devicesCommand = require("./command/devices");
-const trackCommand = require("./command/track");
-const historyCommand = require("./command/history");
-const removeDeviceCommand = require("./command/removedevice");
+const startCommand = require("./commands/start");
+const addDeviceCommand = require("./commands/adddevice");
+const devicesCommand = require("./commands/devices");
+const trackCommand = require("./commands/track");
+const historyCommand = require("./commands/history");
+const removeDeviceCommand = require("./commands/removedevice");
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 🔐 ENVIRONMENT
@@ -35,14 +35,12 @@ if (!OWNER_ID) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 🤖 TELEGRAM BOT
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
 // IMPORTANT:
-// No polling is enabled.
-// Render uses webhook mode.
+// Polling is intentionally disabled.
+// Render uses Telegram Webhook mode.
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-const bot = new TelegramBot(
-    BOT_TOKEN
-);
+const bot = new TelegramBot(BOT_TOKEN);
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 👑 OWNER CHECK
@@ -60,53 +58,42 @@ function isOwner(msg) {
 // 🤖 START
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-bot.onText(
-    /^\/start$/i,
-    async (msg) => {
+bot.onText(/^\/start(?:@\w+)?$/i, async (msg) => {
+    try {
+        await startCommand(bot, msg);
+    } catch (error) {
+        console.error("❌ /start error:", error);
 
         try {
-
-            await startCommand(
-                bot,
-                msg
-            );
-
-        } catch (error) {
-
-            console.error(
-                "❌ /start error:",
-                error
-            );
-
             await bot.sendMessage(
                 msg.chat.id,
                 "❌ Unable to start the bot."
             );
+        } catch (sendError) {
+            console.error(
+                "❌ Failed to send /start error:",
+                sendError.message
+            );
         }
     }
-);
+});
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 👑 OWNER
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-bot.onText(
-    /^\/owner$/i,
-    async (msg) => {
-
-        try {
-
-            if (!isOwner(msg)) {
-
-                return bot.sendMessage(
-                    msg.chat.id,
-                    `❌ 𝐀𝐂𝐂𝐄𝐒𝐒 𝐃𝐄𝐍𝐈𝐄𝐃
+bot.onText(/^\/owner(?:@\w+)?$/i, async (msg) => {
+    try {
+        if (!isOwner(msg)) {
+            return await bot.sendMessage(
+                msg.chat.id,
+                `❌ 𝐀𝐂𝐂𝐄𝐒𝐒 𝐃𝐄𝐍𝐈𝐄𝐃
 
 👑 Owner only.`
-                );
-            }
+            );
+        }
 
-            const text = `
+        const text = `
 ╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮
           👑 𝐎𝐖𝐍𝐄𝐑 𝐌𝐄𝐍𝐔
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
@@ -125,35 +112,29 @@ bot.onText(
 🔐 Authorized location sharing only.
 `;
 
-            await bot.sendMessage(
-                msg.chat.id,
-                text
-            );
+        await bot.sendMessage(
+            msg.chat.id,
+            text
+        );
 
-        } catch (error) {
-
-            console.error(
-                "❌ /owner error:",
-                error
-            );
-        }
+    } catch (error) {
+        console.error(
+            "❌ /owner error:",
+            error
+        );
     }
-);
+});
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ➕ ADD DEVICE
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 bot.onText(
-    /^\/adddevice(?:\s+(.+))?$/i,
+    /^\/adddevice(?:@\w+)?(?:\s+(.+))?$/i,
     async (msg, match) => {
-
         try {
-
             const args = match[1]
-                ? match[1]
-                    .trim()
-                    .split(/\s+/)
+                ? match[1].trim().split(/\s+/)
                 : [];
 
             await addDeviceCommand(
@@ -163,7 +144,6 @@ bot.onText(
             );
 
         } catch (error) {
-
             console.error(
                 "❌ /adddevice error:",
                 error
@@ -177,18 +157,15 @@ bot.onText(
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 bot.onText(
-    /^\/devices$/i,
+    /^\/devices(?:@\w+)?$/i,
     async (msg) => {
-
         try {
-
             await devicesCommand(
                 bot,
                 msg
             );
 
         } catch (error) {
-
             console.error(
                 "❌ /devices error:",
                 error
@@ -202,15 +179,11 @@ bot.onText(
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 bot.onText(
-    /^\/track(?:\s+(.+))?$/i,
+    /^\/track(?:@\w+)?(?:\s+(.+))?$/i,
     async (msg, match) => {
-
         try {
-
             const args = match[1]
-                ? match[1]
-                    .trim()
-                    .split(/\s+/)
+                ? match[1].trim().split(/\s+/)
                 : [];
 
             await trackCommand(
@@ -220,7 +193,6 @@ bot.onText(
             );
 
         } catch (error) {
-
             console.error(
                 "❌ /track error:",
                 error
@@ -234,15 +206,11 @@ bot.onText(
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 bot.onText(
-    /^\/history(?:\s+(.+))?$/i,
+    /^\/history(?:@\w+)?(?:\s+(.+))?$/i,
     async (msg, match) => {
-
         try {
-
             const args = match[1]
-                ? match[1]
-                    .trim()
-                    .split(/\s+/)
+                ? match[1].trim().split(/\s+/)
                 : [];
 
             await historyCommand(
@@ -252,7 +220,6 @@ bot.onText(
             );
 
         } catch (error) {
-
             console.error(
                 "❌ /history error:",
                 error
@@ -266,15 +233,11 @@ bot.onText(
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 bot.onText(
-    /^\/removedevice(?:\s+(.+))?$/i,
+    /^\/removedevice(?:@\w+)?(?:\s+(.+))?$/i,
     async (msg, match) => {
-
         try {
-
             const args = match[1]
-                ? match[1]
-                    .trim()
-                    .split(/\s+/)
+                ? match[1].trim().split(/\s+/)
                 : [];
 
             await removeDeviceCommand(
@@ -284,7 +247,6 @@ bot.onText(
             );
 
         } catch (error) {
-
             console.error(
                 "❌ /removedevice error:",
                 error
@@ -294,37 +256,24 @@ bot.onText(
 );
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 📨 TELEGRAM UPDATE
+// 📨 TELEGRAM UPDATE PROCESSOR
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 function processUpdate(update) {
-
     if (!update) {
         return;
     }
 
-    bot.processUpdate(
-        update
-    );
+    bot.processUpdate(update);
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 🟢 TELEGRAM CONNECTION
+// 🟢 TELEGRAM CONNECTION TEST
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 async function initializeTelegram() {
-
     try {
-
-        // Make absolutely sure
-        // polling is not running.
-
-        await bot
-            .stopPolling()
-            .catch(() => {});
-
-        const me =
-            await bot.getMe();
+        const me = await bot.getMe();
 
         console.log(`
 ╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮
@@ -338,15 +287,19 @@ async function initializeTelegram() {
 `);
 
     } catch (error) {
-
         console.error(
-            "❌ Telegram initialization failed:",
+            "❌ Telegram connection failed:",
             error.message
         );
+
+        process.exit(1);
     }
 }
 
-// Start Telegram connection
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 🚀 INITIALIZE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 initializeTelegram();
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
