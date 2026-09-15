@@ -4,6 +4,7 @@ const express = require("express");
 const path = require("path");
 
 const {
+    bot,
     processUpdate
 } = require("./bot");
 
@@ -26,12 +27,14 @@ if (!WEBHOOK_URL) {
 }
 
 const WEBHOOK_PATH = `/telegram/${BOT_TOKEN}`;
+const WEBHOOK = `${WEBHOOK_URL}${WEBHOOK_PATH}`;
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 📦 MIDDLEWARE
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 app.use(express.json());
+
 app.use(
     express.urlencoded({
         extended: true
@@ -39,35 +42,30 @@ app.use(
 );
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 🌐 PUBLIC FOLDER
+// 🌐 PUBLIC
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 app.use(
     express.static(
-        path.join(
-            __dirname,
-            "public"
-        )
+        path.join(__dirname, "public")
     )
 );
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// ❤️ HEALTH CHECK
+// ❤️ HEALTH
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-app.get(
-    "/api/health",
-    (req, res) => {
+app.get("/api/health", (req, res) => {
 
-        res.json({
-            success: true,
-            service: "Location Tracker",
-            status: "online",
-            telegram: "webhook",
-            time: new Date().toISOString()
-        });
-    }
-);
+    res.json({
+        success: true,
+        service: "Location Tracker",
+        status: "online",
+        telegram: "webhook",
+        time: new Date().toISOString()
+    });
+
+});
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 🤖 TELEGRAM WEBHOOK
@@ -79,9 +77,7 @@ app.post(
 
         try {
 
-            processUpdate(
-                req.body
-            );
+            processUpdate(req.body);
 
             res.sendStatus(200);
 
@@ -94,6 +90,7 @@ app.post(
 
             res.sendStatus(500);
         }
+
     }
 );
 
@@ -122,6 +119,7 @@ app.post(
                 message:
                     "deviceId, latitude and longitude are required"
             });
+
         }
 
         const location = {
@@ -142,6 +140,7 @@ app.post(
             message: "Location received",
             location
         });
+
     }
 );
 
@@ -149,43 +148,38 @@ app.post(
 // 🏠 HOME
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-app.get(
-    "/",
-    (req, res) => {
+app.get("/", (req, res) => {
 
-        res.sendFile(
-            path.join(
-                __dirname,
-                "public",
-                "index.html"
-            )
-        );
-    }
-);
+    res.sendFile(
+        path.join(
+            __dirname,
+            "public",
+            "index.html"
+        )
+    );
+
+});
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ❌ 404
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-app.use(
-    (req, res) => {
+app.use((req, res) => {
 
-        res.status(404).json({
-            success: false,
-            message: "Route not found"
-        });
-    }
-);
+    res.status(404).json({
+        success: false,
+        message: "Route not found"
+    });
+
+});
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 🚀 START SERVER
+// 🚀 START
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-app.listen(
-    PORT,
-    async () => {
+app.listen(PORT, async () => {
 
-        console.log(`
+    console.log(`
 ╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮
 │                                        │
 │       🟢 𝐒𝐄𝐑𝐕𝐄𝐑 𝐎𝐍𝐋𝐈𝐍𝐄               │
@@ -196,50 +190,36 @@ app.listen(
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
 `);
 
-        try {
+    try {
 
-            const TelegramBot =
-                require(
-                    "node-telegram-bot-api"
-                );
+        // Remove any previous webhook
+        await bot.deleteWebHook();
 
-            const telegram =
-                new TelegramBot(
-                    BOT_TOKEN
-                );
+        // Set the new webhook
+        await bot.setWebHook(WEBHOOK);
 
-            const webhook =
-                `${WEBHOOK_URL}${WEBHOOK_PATH}`;
+        const info =
+            await bot.getWebHookInfo();
 
-            // Remove old webhook first
-            await telegram.deleteWebHook();
+        console.log(`
+╭━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╮
+│     🟢 𝐖𝐄𝐁𝐇𝐎𝐎𝐊 𝐀𝐂𝐓𝐈𝐕𝐄       │
+╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
 
-            // Configure new webhook
-            await telegram.setWebHook(
-                webhook
-            );
+🌐 URL:
+${info.url}
 
-            const info =
-                await telegram.getWebHookInfo();
+📨 Pending:
+${info.pending_update_count}
+`);
 
-            console.log(
-                "🟢 Telegram webhook configured"
-            );
+    } catch (error) {
 
-            console.log(
-                `🌐 Webhook: ${info.url}`
-            );
+        console.error(
+            "❌ Webhook setup failed:",
+            error.message
+        );
 
-            console.log(
-                `📨 Pending updates: ${info.pending_update_count}`
-            );
-
-        } catch (error) {
-
-            console.error(
-                "❌ Webhook setup failed:",
-                error.message
-            );
-        }
     }
-);
+
+});
